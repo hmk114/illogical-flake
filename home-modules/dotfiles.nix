@@ -188,53 +188,6 @@ in
                          'source: thumbnailPath
     fallbacks: sourcePath.length > 0 ? [`''${Qt.resolvedUrl(sourcePath)}`] : []'
 
-        substituteInPlace $out/ii/modules/common/widgets/ThumbnailImage.qml \
-          --replace-fail '    asynchronous: true' \
-                         '    Component.onCompleted: {
-        console.log(`[ii-debug thumbnail] sourcePath=''${sourcePath} thumbnailPath=''${thumbnailPath} source=''${source} fallback=''${fallbacks.length > 0 ? fallbacks[0] : ""}`)
-    }
-
-    asynchronous: true' \
-          --replace-fail '        onExited: (exitCode, exitStatus) => {
-            if (exitCode === 1) { // Force reload if thumbnail had to be generated' \
-                         '        onExited: (exitCode, exitStatus) => {
-            console.log(`[ii-debug thumbnail-process] exitCode=''${exitCode} exitStatus=''${exitStatus} sourcePath=''${root.sourcePath} thumbnailPath=''${root.thumbnailPath}`)
-            if (exitCode === 1) { // Force reload if thumbnail had to be generated'
-
-        substituteInPlace $out/ii/modules/common/widgets/StyledImage.qml \
-          --replace-fail '    onStatusChanged: {
-        if (status === Image.Error && currentFallbackIndex < fallbacks.length) {' \
-                         '    onStatusChanged: {
-        if (fallbacks.length > 0 || String(source).includes("/thumbnails/")) {
-            console.log(`[ii-debug image] status=''${status} source=''${source} fallbackIndex=''${currentFallbackIndex}/''${fallbacks.length} nextFallback=''${currentFallbackIndex < fallbacks.length ? fallbacks[currentFallbackIndex] : ""}`)
-        }
-        if (status === Image.Error && currentFallbackIndex < fallbacks.length) {'
-
-        substituteInPlace $out/ii/modules/settings/QuickConfig.qml \
-          --replace-fail '            onRead: data => {
-                randomWallProc.status = data.trim();
-            }' \
-                         '            onRead: data => {
-                console.log(`[ii-debug random-wall stdout] ''${data}`);
-                randomWallProc.status = data.trim();
-            }' \
-          --replace-fail '        }
-    }
-
-    component SmallLightDarkPreferenceButton' \
-                         '        }
-        stderr: SplitParser {
-            onRead: data => {
-                console.log(`[ii-debug random-wall stderr] ''${data}`);
-            }
-        }
-        onExited: (exitCode, exitStatus) => {
-            console.log(`[ii-debug random-wall exit] script=''${randomWallProc.scriptPath} exitCode=''${exitCode} exitStatus=''${exitStatus}`);
-        }
-    }
-
-    component SmallLightDarkPreferenceButton'
-
         for script in random_konachan_wall.sh random_osu_wall.sh; do
           substituteInPlace $out/ii/scripts/colors/random/$script \
             --replace-fail '    if command -v xdg-user-dir &> /dev/null; then
@@ -250,16 +203,12 @@ in
         fi
     fi' \
             --replace-fail 'mkdir -p "$PICTURES_DIR/Wallpapers"' \
-                           'mkdir -p "$PICTURES_DIR/Wallpapers"
-echo "[ii-debug random-wall] pictures=$PICTURES_DIR wallpapers=$PICTURES_DIR/Wallpapers"' \
+                           'mkdir -p "$PICTURES_DIR/Wallpapers"' \
             --replace-fail 'curl "$link" -o "$downloadPath"' \
-                           'echo "[ii-debug random-wall] link=$link downloadPath=$downloadPath"
-if [ -z "$link" ] || [ "$link" = "null" ]; then
-    echo "[ii-debug random-wall] missing image link"
+                           'if [ -z "$link" ] || [ "$link" = "null" ]; then
     exit 1
 fi
-curl -fL --retry 2 "$link" -o "$downloadPath"
-echo "[ii-debug random-wall] saved=$downloadPath bytes=$(wc -c < "$downloadPath" 2>/dev/null || echo 0)"'
+curl -fL --retry 2 "$link" -o "$downloadPath"'
         done
 
         patchShebangs $out
