@@ -93,6 +93,10 @@ in
         chmod -R u+w $out
         substituteInPlace $out/foot.ini \
           --replace-fail "font=JetBrainsMono Nerd Font:size=11" "font=JetBrainsMono Nerd Font:size=14" \
+          --replace-fail "pad=25x25" "pad=25x25
+
+[colors]
+alpha=0.85" \
           --replace-fail "clipboard-copy=Control+c" "clipboard-copy=Control+Shift+c" \
           --replace-fail "clipboard-paste=Control+v" "clipboard-paste=Control+Shift+v" \
           --replace-fail "\x03=Control+Shift+c" "\x03=Control+c"
@@ -154,7 +158,9 @@ in
         cp -r ${dotfilesSource}/dots/.config/kitty $out
         chmod -R u+w $out
         substituteInPlace $out/kitty.conf \
-          --replace-fail "font_size 11.0" "font_size 14.0"
+          --replace-fail "font_size 11.0" "font_size 14.0
+
+background_opacity 0.85"
       '';
       "konsolerc".source = "${dotfilesSource}/dots/.config/konsolerc";
       "Kvantum".source = "${dotfilesSource}/dots/.config/Kvantum";
@@ -175,8 +181,15 @@ in
         # The complex shebang tried to source a venv, but we provide pythonEnv directly via Nix
         find $out -name "*.py" -print0 | xargs -0 sed -i 's|^#!.*ILLOGICAL_IMPULSE_VIRTUAL_ENV.*|#!/usr/bin/env python3|'
         
-        # Suppress permission errors when writing to /dev/pts in applycolor.sh
-        sed -i 's|/dev/pts/\*|/dev/pts/* 2>/dev/null|' $out/ii/scripts/colors/applycolor.sh
+        # Suppress permission errors when writing color sequences to other TTYs.
+        substituteInPlace $out/ii/scripts/colors/applycolor.sh \
+          --replace-fail '      } & disown || true' \
+                         '      } 2>/dev/null & disown || true'
+        substituteInPlace $out/ii/scripts/colors/applycolor.sh \
+          --replace-fail 'term_alpha=100 #Set this to < 100 make all your terminals transparent' \
+                         'term_alpha=85 # Set this to < 100 make all your terminals transparent'
+        substituteInPlace $out/ii/scripts/colors/terminal/sequences.txt \
+          --replace-fail '[100]#$term0 #' '[$alpha]#$term0 #'
 
         # Match freedesktop thumbnail cache URIs for non-ASCII/spaced paths.
         substituteInPlace $out/ii/modules/common/widgets/ThumbnailImage.qml \
