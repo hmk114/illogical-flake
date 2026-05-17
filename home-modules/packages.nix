@@ -132,6 +132,8 @@ in
       kdePackages.plasma-nm  # Network management (for kcm_networkmanagement)
       kdePackages.plasma-workspace # Provides plasma-apply-colorscheme
       kdePackages.kde-cli-tools # Provides various KDE CLI utilities
+      kdePackages.dolphin # Default file manager used by the dotfiles
+      kdePackages.kio-extras # Extra Dolphin/KIO protocol and thumbnail support
       kdePackages.polkit-kde-agent-1  # Polkit authentication agent
       kdePackages.kdialog  # Dialog prompts
       kdePackages.kirigami
