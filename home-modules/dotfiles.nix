@@ -183,7 +183,10 @@ in
           --replace-fail 'const resolvedUrlWithoutFileProtocol = FileUtils.trimFileProtocol(`''${Qt.resolvedUrl(sourcePath)}`);' \
                          'const decodedPath = decodeURIComponent(FileUtils.trimFileProtocol(`''${sourcePath}`));' \
           --replace-fail 'const encodedUrlWithoutFileProtocol = resolvedUrlWithoutFileProtocol.split("/").map(part => encodeURIComponent(part)).join("/");' \
-                         'const encodedUrlWithoutFileProtocol = decodedPath.split("/").map(part => encodeURIComponent(part)).join("/");'
+                         'const encodedUrlWithoutFileProtocol = decodedPath.split("/").map(part => encodeURIComponent(part)).join("/");' \
+          --replace-fail 'source: thumbnailPath' \
+                         'source: thumbnailPath
+    fallbacks: sourcePath.length > 0 ? [`''${Qt.resolvedUrl(sourcePath)}`] : []'
 
         patchShebangs $out
       '';
