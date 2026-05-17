@@ -237,6 +237,18 @@ in
 
         for script in random_konachan_wall.sh random_osu_wall.sh; do
           substituteInPlace $out/ii/scripts/colors/random/$script \
+            --replace-fail '    if command -v xdg-user-dir &> /dev/null; then
+        xdg-user-dir PICTURES
+        return
+    fi' \
+                           '    if command -v xdg-user-dir &> /dev/null; then
+        local pictures_dir
+        pictures_dir=$(xdg-user-dir PICTURES)
+        if [ -n "$pictures_dir" ] && [ "$pictures_dir" != "$HOME" ]; then
+            echo "$pictures_dir"
+            return
+        fi
+    fi' \
             --replace-fail 'mkdir -p "$PICTURES_DIR/Wallpapers"' \
                            'mkdir -p "$PICTURES_DIR/Wallpapers"
 echo "[ii-debug random-wall] pictures=$PICTURES_DIR wallpapers=$PICTURES_DIR/Wallpapers"' \
