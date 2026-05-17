@@ -92,7 +92,10 @@ in
         cp -r ${dotfilesSource}/dots/.config/foot $out
         chmod -R u+w $out
         substituteInPlace $out/foot.ini \
-          --replace-fail "font=JetBrainsMono Nerd Font:size=11" "font=JetBrainsMono Nerd Font:size=14"
+          --replace-fail "font=JetBrainsMono Nerd Font:size=11" "font=JetBrainsMono Nerd Font:size=14" \
+          --replace-fail "clipboard-copy=Control+c" "clipboard-copy=Control+Shift+c" \
+          --replace-fail "clipboard-paste=Control+v" "clipboard-paste=Control+Shift+v" \
+          --replace-fail "\x03=Control+Shift+c" "\x03=Control+c"
       '';
       "fuzzel".source = "${dotfilesSource}/dots/.config/fuzzel";
       
