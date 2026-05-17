@@ -178,6 +178,13 @@ in
         # Suppress permission errors when writing to /dev/pts in applycolor.sh
         sed -i 's|/dev/pts/\*|/dev/pts/* 2>/dev/null|' $out/ii/scripts/colors/applycolor.sh
 
+        # Match freedesktop thumbnail cache URIs for non-ASCII/spaced paths.
+        substituteInPlace $out/ii/modules/common/widgets/ThumbnailImage.qml \
+          --replace-fail 'const resolvedUrlWithoutFileProtocol = FileUtils.trimFileProtocol(`''${Qt.resolvedUrl(sourcePath)}`);' \
+                         'const decodedPath = decodeURIComponent(FileUtils.trimFileProtocol(`''${sourcePath}`));' \
+          --replace-fail 'const encodedUrlWithoutFileProtocol = resolvedUrlWithoutFileProtocol.split("/").map(part => encodeURIComponent(part)).join("/");' \
+                         'const encodedUrlWithoutFileProtocol = decodedPath.split("/").map(part => encodeURIComponent(part)).join("/");'
+
         patchShebangs $out
       '';
 
