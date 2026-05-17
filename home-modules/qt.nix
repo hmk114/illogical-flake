@@ -56,6 +56,9 @@ in
         
         export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
         export QT_QPA_PLATFORMTHEME=gtk3
+        export QT_SCALE_FACTOR=1.5
+        unset GDK_DPI_SCALE
+        unset ELECTRON_FORCE_DEVICE_SCALE_FACTOR
         
         # Launch the real binary
         exec ${qsPackage}/bin/qs "$@"

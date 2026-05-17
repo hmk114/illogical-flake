@@ -11,10 +11,9 @@ in
     # Environment variables for Illogical Impulse
     home.sessionVariables = {
       # QT_QPA_PLATFORMTHEME = "qt6ct";  # Use qt6ct for Qt6 theming
-      QT_STYLE_OVERRIDE = "";
       ILLOGICAL_IMPULSE_DOTFILES_SOURCE = "${config.home.homeDirectory}/.config";
       ILLOGICAL_IMPULSE_VIRTUAL_ENV = "${config.home.homeDirectory}/.local/state/quickshell/.venv";
-      qsConfig = "${config.home.homeDirectory}/.config/quickshell/ii";
+      qsConfig = "ii";
     };
     
     # Ensure variables are available to systemd services (and Hyprland)

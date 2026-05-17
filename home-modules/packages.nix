@@ -14,6 +14,7 @@ let
     ps.cffi
     ps.click
     ps."dbus-python"
+    ps."google-auth"
     ps."kde-material-you-colors"
     ps.libsass
     ps.loguru
@@ -25,6 +26,7 @@ let
     ps.pycairo
     ps.pygobject3
     ps.pywayland
+    ps.requests
     ps.setproctitle
     ps."setuptools-scm"
     ps.tqdm
@@ -97,6 +99,7 @@ in
       hyprlock
       hypridle
       hyprsunset
+      hyprland-qtutils
       wayland-protocols
       wl-clipboard
 
