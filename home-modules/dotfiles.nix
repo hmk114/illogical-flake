@@ -180,6 +180,9 @@ background_opacity 0.85"
         # Replace complex shebangs that patchShebangs can't handle with standard python
         # The complex shebang tried to source a venv, but we provide pythonEnv directly via Nix
         find $out -name "*.py" -print0 | xargs -0 sed -i 's|^#!.*ILLOGICAL_IMPULSE_VIRTUAL_ENV.*|#!/usr/bin/env python3|'
+        substituteInPlace $out/ii/scripts/colors/generate_colors_material.py \
+          --replace-fail "material_colors['primary_paletteKeyColor']" \
+                         "material_colors['primaryPaletteKeyColor']"
         
         # Suppress permission errors when writing color sequences to other TTYs.
         substituteInPlace $out/ii/scripts/colors/applycolor.sh \
