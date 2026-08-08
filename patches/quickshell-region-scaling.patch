@@ -1,0 +1,123 @@
+diff --git a/ii/modules/ii/regionSelector/RegionSelection.qml b/ii/modules/ii/regionSelector/RegionSelection.qml
+index 19435a7..fdbcbcc 100644
+--- a/ii/modules/ii/regionSelector/RegionSelection.qml
++++ b/ii/modules/ii/regionSelector/RegionSelection.qml
+@@ -64,7 +64,8 @@ PanelWindow {
+ 
+     // Screen & interaction vars
+     readonly property HyprlandMonitor hyprlandMonitor: Hyprland.monitorFor(screen)
+-    readonly property real monitorScale: hyprlandMonitor.scale
++    readonly property real monitorScale: root.screen.devicePixelRatio
++    readonly property real hyprlandToQmlScale: hyprlandMonitor.scale / root.monitorScale
+     readonly property real monitorOffsetX: hyprlandMonitor.x
+     readonly property real monitorOffsetY: hyprlandMonitor.y
+     property int activeWorkspaceId: hyprlandMonitor.activeWorkspace?.id ?? 0
+@@ -81,16 +82,16 @@ PanelWindow {
+     property var mouseButton: null
+     property var imageRegions: []
+     readonly property list<var> windowRegions: RegionFunctions.filterWindowRegionsByLayers(
+-        root.windows.filter(w => w.workspace.id === root.activeWorkspaceId),
+-        root.layerRegions
+-    ).map(window => {
+-        return {
+-            at: [window.at[0] - root.monitorOffsetX, window.at[1] - root.monitorOffsetY],
+-            size: [window.size[0], window.size[1]],
++        root.windows.filter(w => w.workspace.id === root.activeWorkspaceId).map(window => ({
++            at: [(window.at[0] - root.monitorOffsetX) * root.hyprlandToQmlScale,
++                 (window.at[1] - root.monitorOffsetY) * root.hyprlandToQmlScale],
++            size: [window.size[0] * root.hyprlandToQmlScale,
++                   window.size[1] * root.hyprlandToQmlScale],
+             class: window.class,
+             title: window.title,
+-        }
+-    })
++        })),
++        root.layerRegions
++    )
+     readonly property list<var> layerRegions: {
+         const layersOfThisMonitor = root.layers[root.hyprlandMonitor.name]
+         const topLayers = layersOfThisMonitor?.levels["2"]
+@@ -106,8 +107,10 @@ PanelWindow {
+         })
+         const offsetAdjustedLayers = nonBarTopLayers.map(layer => {
+             return {
+-                at: [layer.at[0] - root.monitorOffsetX, layer.at[1] - root.monitorOffsetY],
+-                size: layer.size,
++                at: [(layer.at[0] - root.monitorOffsetX) * root.hyprlandToQmlScale,
++                     (layer.at[1] - root.monitorOffsetY) * root.hyprlandToQmlScale],
++                size: [layer.size[0] * root.hyprlandToQmlScale,
++                       layer.size[1] * root.hyprlandToQmlScale],
+                 namespace: layer.namespace,
+             }
+         });
+@@ -223,13 +226,17 @@ PanelWindow {
+         command: ["bash", "-c", `${Directories.scriptPath}/images/find-regions-venv.sh ` 
+             + `--hyprctl ` 
+             + `--image '${StringUtils.shellSingleQuoteEscape(root.screenshotPath)}' ` 
+-            + `--max-width ${Math.round(root.screen.width * root.falsePositivePreventionRatio)} ` 
+-            + `--max-height ${Math.round(root.screen.height * root.falsePositivePreventionRatio)} `]
++            + `--max-width ${Math.round(root.screen.width * root.monitorScale * root.falsePositivePreventionRatio)} ` 
++            + `--max-height ${Math.round(root.screen.height * root.monitorScale * root.falsePositivePreventionRatio)} `]
+         stdout: StdioCollector {
+             id: imageDimensionCollector
+             onStreamFinished: {
++                const qmlRegions = JSON.parse(imageDimensionCollector.text).map(region => ({
++                    at: [region.at[0] / root.monitorScale, region.at[1] / root.monitorScale],
++                    size: [region.size[0] / root.monitorScale, region.size[1] / root.monitorScale],
++                }));
+                 imageRegions = RegionFunctions.filterImageRegions(
+-                    JSON.parse(imageDimensionCollector.text),
++                    qmlRegions,
+                     root.windowRegions
+                 );
+             }
+diff --git a/ii/modules/waffle/screenSnip/WRegionSelectionPanel.qml b/ii/modules/waffle/screenSnip/WRegionSelectionPanel.qml
+index 3224df4..7da5b96 100644
+--- a/ii/modules/waffle/screenSnip/WRegionSelectionPanel.qml
++++ b/ii/modules/waffle/screenSnip/WRegionSelectionPanel.qml
+@@ -59,7 +59,10 @@ PanelWindow {
+ 
+     // Hyprland stuff
+     readonly property HyprlandMonitor hyprlandMonitor: Hyprland.monitorFor(screen)
+-    readonly property real monitorScale: hyprlandMonitor.scale
++    readonly property real monitorScale: root.screen.devicePixelRatio
++    readonly property real hyprlandToQmlScale: hyprlandMonitor.scale / root.monitorScale
++    readonly property real monitorOffsetX: hyprlandMonitor.x
++    readonly property real monitorOffsetY: hyprlandMonitor.y
+     readonly property var windows: [...HyprlandData.windowList].sort((a, b) => {
+         // Sort floating=true windows before others
+         if (a.floating === b.floating)
+@@ -145,15 +148,27 @@ PanelWindow {
+             property bool isWindowSelection: root.selectionMode === WRegionSelectionPanel.SelectionMode.Window
+             property var hoveredWindow: root.windows.find(w => {
+                 const inCurrentWorkspace = w.workspace.id === HyprlandData.activeWorkspace.id;
+-                const withinXRange = w.at[0] <= dragArea.mouseX && dragArea.mouseX <= w.at[0] + w.size[0];
+-                const withinYRange = w.at[1] <= dragArea.mouseY && dragArea.mouseY <= w.at[1] + w.size[1];
++                const windowX = (w.at[0] - root.monitorOffsetX) * root.hyprlandToQmlScale;
++                const windowY = (w.at[1] - root.monitorOffsetY) * root.hyprlandToQmlScale;
++                const windowWidth = w.size[0] * root.hyprlandToQmlScale;
++                const windowHeight = w.size[1] * root.hyprlandToQmlScale;
++                const withinXRange = windowX <= dragArea.mouseX && dragArea.mouseX <= windowX + windowWidth;
++                const withinYRange = windowY <= dragArea.mouseY && dragArea.mouseY <= windowY + windowHeight;
+                 return inCurrentWorkspace && withinXRange && withinYRange;
+             })
+             property int winPadding: 1
+-            property int selectionX: isWindowSelection ? ((hoveredWindow?.at[0] ?? 0) - winPadding) : regionTopLeftX
+-            property int selectionY: isWindowSelection ? ((hoveredWindow?.at[1] ?? 0) - winPadding) : regionTopLeftY
+-            property int selectionWidth: isWindowSelection ? ((hoveredWindow?.size[0] ?? 0) + winPadding * 2) : regionWidth
+-            property int selectionHeight: isWindowSelection ? ((hoveredWindow?.size[1] ?? 0) + winPadding * 2) : regionHeight
++            property real selectionX: isWindowSelection
++                ? (((hoveredWindow?.at[0] ?? root.monitorOffsetX) - root.monitorOffsetX) * root.hyprlandToQmlScale - winPadding)
++                : regionTopLeftX
++            property real selectionY: isWindowSelection
++                ? (((hoveredWindow?.at[1] ?? root.monitorOffsetY) - root.monitorOffsetY) * root.hyprlandToQmlScale - winPadding)
++                : regionTopLeftY
++            property real selectionWidth: isWindowSelection
++                ? ((hoveredWindow?.size[0] ?? 0) * root.hyprlandToQmlScale + winPadding * 2)
++                : regionWidth
++            property real selectionHeight: isWindowSelection
++                ? ((hoveredWindow?.size[1] ?? 0) * root.hyprlandToQmlScale + winPadding * 2)
++                : regionHeight
+ 
+             onDragReleased: (diffX, diffY) => {
+                 if (selectionWidth === 0 || selectionHeight === 0) {

@@ -171,6 +171,7 @@ background_opacity 0.85"
       "quickshell".source = pkgs.runCommand "quickshell-patched" { 
         buildInputs = [ 
           pkgs.bash 
+          pkgs.patch
           config.programs.illogical-impulse.internal.pythonEnv 
         ]; 
       } ''
@@ -194,14 +195,8 @@ background_opacity 0.85"
         substituteInPlace $out/ii/scripts/colors/terminal/sequences.txt \
           --replace-fail '[100]#$term0 #' '[$alpha]#$term0 #'
 
-        # Crop screenshots in Qt's device-independent coordinate system.
-        for selector in \
-          $out/ii/modules/ii/regionSelector/RegionSelection.qml \
-          $out/ii/modules/waffle/screenSnip/WRegionSelectionPanel.qml; do
-          substituteInPlace $selector \
-            --replace-fail 'readonly property real monitorScale: hyprlandMonitor.scale' \
-                           'readonly property real monitorScale: root.screen.devicePixelRatio'
-        done
+        # Keep screenshot crops and target overlays in the same coordinate system.
+        patch -d $out -p1 < ${../patches/quickshell-region-scaling.patch}
 
         # Match freedesktop thumbnail cache URIs for non-ASCII/spaced paths.
         substituteInPlace $out/ii/modules/common/widgets/ThumbnailImage.qml \
