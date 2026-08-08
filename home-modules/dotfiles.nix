@@ -194,6 +194,15 @@ background_opacity 0.85"
         substituteInPlace $out/ii/scripts/colors/terminal/sequences.txt \
           --replace-fail '[100]#$term0 #' '[$alpha]#$term0 #'
 
+        # Crop screenshots in Qt's device-independent coordinate system.
+        for selector in \
+          $out/ii/modules/ii/regionSelector/RegionSelection.qml \
+          $out/ii/modules/waffle/screenSnip/WRegionSelectionPanel.qml; do
+          substituteInPlace $selector \
+            --replace-fail 'readonly property real monitorScale: hyprlandMonitor.scale' \
+                           'readonly property real monitorScale: root.screen.devicePixelRatio'
+        done
+
         # Match freedesktop thumbnail cache URIs for non-ASCII/spaced paths.
         substituteInPlace $out/ii/modules/common/widgets/ThumbnailImage.qml \
           --replace-fail 'const resolvedUrlWithoutFileProtocol = FileUtils.trimFileProtocol(`''${Qt.resolvedUrl(sourcePath)}`);' \
