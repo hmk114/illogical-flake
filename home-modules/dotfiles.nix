@@ -256,7 +256,12 @@ curl -fL --retry 2 "$link" -o "$downloadPath"'
       
       # Fish config (custom integration)
       "fish/config-custom.fish" = mkIf cfg.dotfiles.fish.enable {
-        source = "${dotfilesSource}/dots/.config/fish/config.fish";
+        source = pkgs.runCommand "illogical-fish-config" {} ''
+          cp ${dotfilesSource}/dots/.config/fish/config.fish $out
+          substituteInPlace $out \
+            --replace-fail "alias ls 'eza --icons'" \
+                           "alias ls 'eza --icons=auto'"
+        '';
       };
       "fish/auto-Hypr.fish" = mkIf cfg.dotfiles.fish.enable {
         source = "${dotfilesSource}/dots/.config/fish/auto-Hypr.fish";
