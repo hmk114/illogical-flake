@@ -181,9 +181,6 @@ background_opacity 0.85"
         # Replace complex shebangs that patchShebangs can't handle with standard python
         # The complex shebang tried to source a venv, but we provide pythonEnv directly via Nix
         find $out -name "*.py" -print0 | xargs -0 sed -i 's|^#!.*ILLOGICAL_IMPULSE_VIRTUAL_ENV.*|#!/usr/bin/env python3|'
-        substituteInPlace $out/ii/scripts/colors/generate_colors_material.py \
-          --replace-fail "material_colors['primary_paletteKeyColor']" \
-                         "material_colors['primaryPaletteKeyColor']"
         
         # Suppress permission errors when writing color sequences to other TTYs.
         substituteInPlace $out/ii/scripts/colors/applycolor.sh \
@@ -223,13 +220,21 @@ background_opacity 0.85"
         fi
     fi' \
             --replace-fail 'mkdir -p "$PICTURES_DIR/Wallpapers"' \
-                           'mkdir -p "$PICTURES_DIR/Wallpapers"' \
-            --replace-fail 'curl "$link" -o "$downloadPath"' \
-                           'if [ -z "$link" ] || [ "$link" = "null" ]; then
+                           'mkdir -p "$PICTURES_DIR/Wallpapers"'
+        done
+
+        substituteInPlace $out/ii/scripts/colors/random/random_osu_wall.sh \
+          --replace-fail 'curl "$link" -o "$downloadPath"' \
+                         'if [ -z "$link" ] || [ "$link" = "null" ]; then
     exit 1
 fi
 curl -fL --retry 2 "$link" -o "$downloadPath"'
-        done
+        substituteInPlace $out/ii/scripts/colors/random/random_konachan_wall.sh \
+          --replace-fail 'curl -A "$userAgent" "$link" -o "$downloadPath"' \
+                         'if [ -z "$link" ] || [ "$link" = "null" ]; then
+    exit 1
+fi
+curl -fL --retry 2 -A "$userAgent" "$link" -o "$downloadPath"'
 
         patchShebangs $out
       '';
@@ -256,12 +261,7 @@ curl -fL --retry 2 "$link" -o "$downloadPath"'
       
       # Fish config (custom integration)
       "fish/config-custom.fish" = mkIf cfg.dotfiles.fish.enable {
-        source = pkgs.runCommand "illogical-fish-config" {} ''
-          cp ${dotfilesSource}/dots/.config/fish/config.fish $out
-          substituteInPlace $out \
-            --replace-fail "alias ls 'eza --icons'" \
-                           "alias ls 'eza --icons=auto'"
-        '';
+        source = "${dotfilesSource}/dots/.config/fish/config.fish";
       };
       "fish/auto-Hypr.fish" = mkIf cfg.dotfiles.fish.enable {
         source = "${dotfilesSource}/dots/.config/fish/auto-Hypr.fish";
